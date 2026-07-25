@@ -1,0 +1,49 @@
+[
+  {
+    "bookSourceComment": "番茄小说 Cloudflare Worker API\n后端 https://fq-api.hehecat.workers.dev\nGitHub https://github.com/hehecat/fq-api\n\n搜索/详情/目录/正文 JSON；字体混淆已在服务端解码。\nWorker 默认按阅读页码（从1开始）处理 page。\n无发现；请控制并发。",
+    "bookSourceGroup": "API",
+    "bookSourceName": "番茄FQ·Worker",
+    "bookSourceType": 0,
+    "bookSourceUrl": "https://fq-api.hehecat.workers.dev",
+    "bookUrlPattern": "https://fq-api\\.hehecat\\.workers\\.dev/api/book/\\d+$",
+    "customOrder": 0,
+    "enabled": true,
+    "enabledCookieJar": false,
+    "enabledExplore": false,
+    "header": "{\n  \"User-Agent\": \"Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 Chrome/120.0.0.0 Mobile Safari/537.36\",\n  \"Accept\": \"application/json\"\n}",
+    "lastUpdateTime": 1753449600000,
+    "respondTime": 180000,
+    "ruleBookInfo": {
+      "author": "$.data.author",
+      "coverUrl": "$.data.thumb_url",
+      "intro": "$.data.abstract_text",
+      "kind": "$.data.complete_category||$.data.category",
+      "lastChapter": "$.data.last_chapter_title",
+      "name": "$.data.book_name",
+      "tocUrl": "$.data.book_id##(.*)##https://fq-api.hehecat.workers.dev/api/book/$1/directory###",
+      "wordCount": "$.data.word_number"
+    },
+    "ruleContent": {
+      "content": "$.data.content"
+    },
+    "ruleSearch": {
+      "author": "$.author",
+      "bookList": "$.data.books[*]",
+      "bookUrl": "$.book_id##(.*)##https://fq-api.hehecat.workers.dev/api/book/$1###",
+      "checkKeyWord": "我不是戏神",
+      "coverUrl": "$.thumb_url",
+      "intro": "$.abstract_text",
+      "kind": "$.category",
+      "lastChapter": "$.last_chapter_title",
+      "name": "$.book_name",
+      "wordCount": "$.word_count"
+    },
+    "ruleToc": {
+      "chapterList": "$.data.chapters[*]",
+      "chapterName": "$.title",
+      "chapterUrl": "$.item_id##.+##@@js:\nvar m = baseUrl.match(/\\/book\\/(\\d+)\\//);\nvar bid = m ? m[1] : \"\";\n\"https://fq-api.hehecat.workers.dev/api/book/\" + bid + \"/chapter/\" + result;###"
+    },
+    "searchUrl": "https://fq-api.hehecat.workers.dev/api/search?q={{key}}&page={{page}}&size=20",
+    "weight": 0
+  }
+]
