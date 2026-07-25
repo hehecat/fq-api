@@ -1,181 +1,194 @@
 # fq-api
 
-番茄小说（fanqienovel）**Rust Web API**：搜索 / 简介 / 目录 / 章节明文。
+番茄小说相关 **API / 阅读书源** 工具集（学习研究用）。
 
-默认走 **官网 Web 链路**，**不依赖手机 / 模拟器 / unidbg**。  
-章节正文通过阅读页 SSR + 预生成字体映射表还原；也支持本地加密缓存 AES 解密、可选签名 sidecar。
+> **仅供学习与研究。** 请遵守当地法律与目标站点服务条款；勿用于未授权批量抓取或商业用途。  
+> 仓库已设为 **Private**。
 
-> 仅供学习与研究逆向工程技术。请遵守当地法律与目标站点服务条款，勿用于未授权的批量抓取或商业用途。
+## 两套线上入口
 
-## 功能
+| 入口 | 地址 | 正文能力 | 说明 |
+|---|---|---|---|
+| **Full（推荐阅读）** | https://fq-full.oyufen.com | **App full + 签名解密，完整章节** | VPS `unidbg-fq` + 适配层 |
+| Worker（网页） | https://fq-api.hehecat.workers.dev | 官网 SSR + 字体表，**可能试读截断** | Cloudflare Workers |
+
+### Full API（完整正文）
+
+```bash
+# 健康检查
+curl 'https://fq-full.oyufen.com/health'
+
+# 搜索（page 从 1，size ≤ 10）
+curl 'https://fq-full.oyufen.com/search?key=我不是戏神&page=1&size=10'
+
+# 详情
+curl 'https://fq-full.oyufen.com/book/7276384138653862966'
+
+# 目录（每章带绝对 url）
+curl 'https://fq-full.oyufen.com/toc/7276384138653862966'
+
+# 正文（HTML 段落，完整）
+curl 'https://fq-full.oyufen.com/chapter/7276384138653862966/7283421685154480674'
+```
+
+兼容别名路径：
+
+- `/api/search?q=`
+- `/api/book/{id}`
+- `/api/book/{id}/directory`
+- `/api/book/{id}/chapter/{item_id}`
+
+### Worker API（网页链路）
+
+```bash
+curl 'https://fq-api.hehecat.workers.dev/health'
+curl 'https://fq-api.hehecat.workers.dev/api/search?q=我不是戏神&page=1&size=10'
+curl 'https://fq-api.hehecat.workers.dev/api/book/7276384138653862966'
+curl 'https://fq-api.hehecat.workers.dev/api/book/7276384138653862966/directory'
+curl 'https://fq-api.hehecat.workers.dev/api/book/7276384138653862966/chapter/7276663560427471412'
+```
+
+注意：上游搜索 `page_count` **最大 10**；Worker 已强制 clamp。
+
+## 阅读 / Legado 书源
+
+适配 [legado-Sigma](https://github.com/angel888k/legado-Sigma-2026) / 原版阅读。
+
+| 书源文件 | 用途 |
+|---|---|
+| [`legado-booksource-full.json`](./legado-booksource-full.json) | **完整正文（推荐）** → `fq-full.oyufen.com` |
+| [`legado-booksource.json`](./legado-booksource.json) | 网页 Worker，可能试读不全 |
+
+导入 Full 源：
+
+```text
+legado://import/bookSource?src=https://raw.githubusercontent.com/hehecat/fq-api/main/legado-booksource-full.json
+```
+
+（Private 仓库 raw 需登录/token；也可把 JSON 拷到手机本地导入。）
+
+手机浏览器先确认：
+
+- https://fq-full.oyufen.com/health → `"service":"fq-full-adapter"`
+
+## 本仓库：Rust `fq-api` 服务
+
+本地/VPS 可编译运行的 Axum 服务（Web 搜索/详情/目录/SSR 章节 + 可选 AES/ADB/签名）。
+
+### 功能
 
 | 接口 | 说明 |
 |---|---|
-| `GET /health` | 健康检查 / 密钥与字体目录状态 |
-| `GET /api/search?q=&page=0&size=10` | 搜索（`x-tt-zhal` 字体表解码） |
-| `GET /api/book/{book_id}` | 书籍详情 / 简介 |
+| `GET /health` | 健康检查 |
+| `GET /api/search?q=&page=&size=` | 搜索（字体表解码） |
+| `GET /api/book/{book_id}` | 详情 |
 | `GET /api/book/{book_id}/directory` | 目录 |
-| `GET /api/book/{book_id}/chapter/{item_id}` | 章节纯文本 |
-| `GET /api/book/{book_id}/chapter/{item_id}/raw` | 章节文本（可含 HTML） |
-
-在线示例（Cloudflare Worker 同源能力）：
-
-- https://fq-api.hehecat.workers.dev/health
-
-## 快速开始
-
-### 依赖
-
-- Rust 1.75+（edition 2021）
-- 可选：Python 3 + `fonttools pillow numpy freetype-py`（仅生成新字体映射时）
+| `GET /api/book/{book_id}/chapter/{item_id}` | 章节 |
+| `GET /api/book/{book_id}/chapter/{item_id}/raw` | 章节 + HTML |
 
 ### 构建运行
 
 ```bash
 git clone https://github.com/hehecat/fq-api.git
 cd fq-api
-
-# 可选：AES 密钥（仅本地加密章节缓存需要）
-cp data/crypt_keys.example.json data/crypt_keys.json
-
+cp data/crypt_keys.example.json data/crypt_keys.json   # 可选，AES 缓存用
 cargo build --release
-./run.sh
-# 或
 FQ_ENABLE_ADB=false PORT=18080 ./target/release/fq-api
+# 或 ./run.sh
 ```
 
-服务默认监听 `http://0.0.0.0:18080`。
-
-### 试一下
+依赖：Rust 1.75+。生成新字体映射时可选 Python：`fonttools pillow numpy freetype-py`。
 
 ```bash
-# 搜索
-curl 'http://127.0.0.1:18080/api/search?q=我不是戏神&size=5'
-
-# 详情
-curl 'http://127.0.0.1:18080/api/book/7276384138653862966'
-
-# 目录
-curl 'http://127.0.0.1:18080/api/book/7276384138653862966/directory'
-
-# 第一章
-curl 'http://127.0.0.1:18080/api/book/7276384138653862966/chapter/7276663560427471412'
-```
-
-## 数据源策略
-
-```
-搜索 / 简介 / 目录  ──►  fanqienovel.com Web API / 页面
-章节正文（默认）    ──►  /reader/{itemId} SSR + 字体映射表查表
-章节正文（可选）    ──►  本地 AES 缓存 / FQ_SIGNER_URL App full / ADB
-```
-
-1. **搜索**：读响应头 `x-tt-zhal`（`f=<font_id>`），用 `font_maps/{font_id}.json` 做 PUA→汉字映射。  
-2. **章节**：解析阅读页 `awesome-font/c/{font_id}`，同样查表解码，并写入 `data/chapters/plaintext/` 缓存。  
-3. **字体映射是离线生成的**；运行时只做 `HashMap` 查表（O(n)），**不会**实时跑 FreeType。
-
-内置映射：
-
-- `font_maps/c207f68a84deae3.json` — 搜索列表
-- `font_maps/dc027189e0ba4cd.json` — 阅读页正文
-
-### 生成 / 更新字体映射
-
-字体 ID 会变。新 ID 出现时：
-
-```bash
-pip install fonttools pillow numpy freetype-py
 python3 tools/build_font_map.py --from-search '我不是戏神'
-# 或
-python3 tools/build_font_map.py --font-id <f字段>
 ```
 
-## 章节 AES 解密（可选）
-
-用于解密 App 本地 / `full` 接口拿到的加密 `content`：
-
-```
-content (base64)
-  -> AES-128-CBC   key=16B(hex32), iv=前16字节
-  -> PKCS7 unpad
-  -> GZIP
-  -> HTML / 纯文本
-```
-
-`registerkey` 外壳密钥（研究用）：
-
-```text
-REG_KEY = ac25c67ddd8f38c1b37a2348828e222e
-```
-
-`data/crypt_keys.json` 示例：
-
-```json
-{
-  "208700406": "9A1AF690605DDC2F556388A3A6B29744"
-}
-```
-
-## 环境变量
+### 环境变量
 
 | 变量 | 默认 | 说明 |
 |---|---|---|
 | `PORT` | `18080` | 监听端口 |
-| `FQ_KEY_FILE` | `data/crypt_keys.json` | `key_version -> AES key` |
-| `FQ_AES_KEY` / `FQ_KEY_VERSION` | - | 单密钥覆盖 |
+| `FQ_KEY_FILE` | `data/crypt_keys.json` | AES key_version 映射 |
 | `FQ_FONT_MAP_DIR` | `font_maps` | 字体映射目录 |
-| `FQ_CHAPTER_CACHE` | `data/chapters/decoded_json` | 加密章节 JSON 缓存 |
-| `FQ_PLAINTEXT_DIR` | `data/chapters/plaintext` | 已解码明文缓存 |
-| `FQ_ENABLE_ADB` | `false` | 是否允许 adb 兜底 |
-| `FQ_ADB_SERIAL` | `127.0.0.1:16384` | adb 设备 |
-| `FQ_SIGNER_URL` | - | 签名 sidecar（unidbg 等） |
-| `FQ_API_BASE` | `https://api5-normal-sinfonlineb.fqnovel.com` | App API 基址 |
+| `FQ_CHAPTER_CACHE` | `data/chapters/decoded_json` | 加密章节缓存 |
+| `FQ_PLAINTEXT_DIR` | `data/chapters/plaintext` | 明文缓存 |
+| `FQ_ENABLE_ADB` | `false` | adb 兜底 |
+| `FQ_SIGNER_URL` | - | 签名 sidecar（`/sign`） |
+| `FQ_API_BASE` | App API 基址 | full 请求用 |
+
+### 数据源策略（Rust 服务）
+
+```text
+搜索/简介/目录  → fanqienovel.com Web
+章节默认        → 阅读页 SSR + font_maps 查表
+章节可选        → 本地 AES 缓存 / FQ_SIGNER_URL full / ADB
+```
+
+字体映射 **离线生成**，运行时只做 HashMap 查表。
+
+内置：
+
+- `font_maps/c207f68a84deae3.json` — 搜索
+- `font_maps/dc027189e0ba4cd.json` — 阅读页
+
+AES（App 缓存 / full）：
+
+```text
+content(base64) → AES-128-CBC(iv=前16B) → PKCS7 → GZIP → HTML
+```
+
+## VPS Full 部署说明
+
+详见 [`FULL-VPS.md`](./FULL-VPS.md)。
+
+摘要：
+
+| 项 | 值 |
+|---|---|
+| 主机 | racknerd（SSH / cloudflared） |
+| 容器 | `gxmandppx/unidbg-fq:latest` → `127.0.0.1:18080` |
+| 适配层 | `fq-full-adapter` → `127.0.0.1:18081` |
+| 域名 | `fq-full.oyufen.com` → adapter |
+| 阅读书源 | `legado-booksource-full.json` |
+
+维护：
+
+```bash
+ssh racknerd-cf
+docker ps --filter name=fqnovel
+docker logs -f fqnovel
+systemctl status fq-full-adapter cloudflared
+```
 
 ## 目录结构
 
 ```text
 fq-api/
-  src/
-    main.rs            # HTTP 路由
-    crypto.rs          # AES-CBC + GZIP / registerkey
-    fontmap.rs         # x-tt-zhal / 阅读页 PUA 映射
-    models.rs
-    state.rs
-    services/
-      web.rs           # 搜索 / 详情 / 目录 / SSR
-      chapter.rs       # 章节聚合 + 缓存
-  font_maps/           # 预生成字体映射（提交进仓库）
-  tools/
-    build_font_map.py  # 离线生成映射
-  data/
-    crypt_keys.example.json
-    chapters/          # 运行时缓存（默认不提交正文）
+  src/                      # Rust 服务
+  font_maps/                # 预生成字体映射
+  tools/build_font_map.py   # 离线生成映射
+  data/                     # 运行时缓存（正文默认不提交）
+  legado-booksource-full.json
+  legado-booksource.json
+  FULL-VPS.md
+  LEGADO.md
   run.sh
-  Cargo.toml
 ```
 
-## 部署
+## 常见问题
 
-### VPS / 本机
+**搜索 502 / 参数有误**  
+上游 `page_count` 不能大于 10。书源 `size=10`，Worker/adapter 已 clamp。
 
-```bash
-cargo build --release
-FQ_ENABLE_ADB=false PORT=18080 ./target/release/fq-api
-```
+**Worker 正文不全**  
+网页 `isChapterLock` 试读。请用 Full 源 `fq-full.oyufen.com`。
 
-systemd / docker 自行挂载 `font_maps/` 与可选 `data/`。
+**阅读目录/正文失败**  
+用最新 `legado-booksource-full.json`（绝对 URL 字段，无 JS 拼链接）。
 
-### Cloudflare Workers
-
-同能力的轻量版在姊妹项目思路下可部署到 Workers（纯 Web + 内置映射，无 ADB/so）。  
-本仓库是 **完整 Rust 服务**，适合 VPS；Workers 版源码见本机 `fq-worker/`（若一并维护）。
-
-## 批量说明
-
-- **适合**：按需 API、中小批量、依赖明文缓存复用。  
-- **不太适合**：无节制高并发全站爬取（阅读页 HTML 更重，易触发上游限流）。  
-- 大批量可考虑：`FQ_SIGNER_URL` + App `full`/`batch_full`，或先用本服务灌 `plaintext` 缓存。
+**workers.dev 手机打不开**  
+网络限制；Full 域名走 Cloudflare Tunnel，一般更稳。
 
 ## License
 
-MIT（代码）。目标站点内容版权归原作者与平台所有；逆向研究请自担合规责任。
+MIT（本仓库代码）。目标站点内容版权归原作者与平台；使用风险自负。

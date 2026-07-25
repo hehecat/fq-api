@@ -1,78 +1,43 @@
-# 阅读 / Legado Sigma 书源
+# 阅读 / Legado 书源
 
-适配 [legado-Sigma-2026](https://github.com/angel888k/legado-Sigma-2026)（与原版 [gedoor/legado](https://github.com/gedoor/legado) 书源格式兼容）。
+适配 [legado-Sigma-2026](https://github.com/angel888k/legado-Sigma-2026) 与原版阅读。
 
-后端 Worker：`https://fq-api.hehecat.workers.dev`
+## 推荐：Full 完整正文
 
-## 一键导入（推荐）
+文件：[`legado-booksource-full.json`](./legado-booksource-full.json)  
+后端：https://fq-full.oyufen.com  
 
-手机已装「阅读」时，用浏览器打开（把域名换成你的 raw 地址）：
-
-```text
-legado://import/bookSource?src=https://raw.githubusercontent.com/hehecat/fq-api/main/legado-booksource.json
-```
-
-若 raw 尚未挂到 GitHub，用本地文件导入（见下）。
-
-## 本地导入
-
-1. 把 `legado-booksource.json` 传到手机  
-2. 阅读 → **我的** → **书源** → 右上角 **☰ / +** → **本地导入**  
-3. 选中该 JSON  
-4. 搜索试一下：`我不是戏神`
-
-也可在电脑开阅读 Web 服务后：
-
-```bash
-curl -X POST 'http://手机IP:1234/saveBookSources' \
-  -H 'Content-Type: application/json' \
-  --data-binary @legado-booksource.json
-```
-
-## 字段映射
-
-| 阅读规则 | Worker 接口 |
+| 规则 | 字段 |
 |---|---|
-| 搜索 | `GET /api/search?q=&page=&size=` |
-| 详情 | `GET /api/book/{book_id}` |
-| 目录 | `GET /api/book/{book_id}/directory` |
-| 正文 | `GET /api/book/{book_id}/chapter/{item_id}` |
+| 搜索列表 | `$.data.books` |
+| 书名/作者 | `$.book_name` / `$.author` |
+| 书链接 | `$.book_url`（绝对 URL） |
+| 目录 | `$.data.toc_url` → `$.data.chapters` |
+| 章节链接 | `$.url`（绝对 URL） |
+| 正文 | `$.data.content`（HTML 段落） |
 
-- 搜索列表：`$.data.books[*]` → `book_name` / `author` / `abstract_text` …  
-- 目录：`$.data.chapters[*]` → `title` / `item_id`  
-- 正文：`$.data.content`（Worker 已字体解码，纯文本）
+### 导入
 
-## 分页说明
+1. 删除旧的「番茄FQ·Worker / Full」源（如有）
+2. 本地导入 JSON，或把文件拷到手机后本地导入
+3. 手机浏览器确认：https://fq-full.oyufen.com/health  
+4. 搜索调试关键字：`我不是戏神`  
+5. 打开较后章节（如第 30 章）应是完整正文，不是试读
 
-阅读里 `{{page}}` 从 **1** 开始；Worker API 的 `page` 是 **0 基**。  
-书源 `searchUrl` 里用 `@js` 做了 `page-1` 转换。
+## 备选：Worker 网页源
 
-## 调试建议
+文件：[`legado-booksource.json`](./legado-booksource.json)  
+后端：https://fq-api.hehecat.workers.dev  
 
-1. 书源管理 → 选中本源 → **调试**  
-2. 搜索关键字用：`我不是戏神`  
-3. 看日志是否 200，列表名是否正常汉字  
-4. 点进目录 / 正文，确认 `source` 含 `web_ssr+font` 或 content 无乱码  
+- 搜索/详情/目录一般可用  
+- **正文可能被网页试读截断**  
+- `size` 必须 ≤ 10  
 
-## 自定义 Worker 域名
+## 故障排查
 
-若你部署了自己的 Worker，全局替换 JSON 里的：
-
-```text
-https://fq-api.hehecat.workers.dev
-```
-
-为你的域名即可。
-
-## 限制
-
-- 无「发现」分类（`enabledExplore=false`）  
-- 正文走官网阅读页 + 字体表，不是 App 签名 full 接口  
-- 大批量/高并发可能被上游限流；阅读里可把本书源并发调低  
-- 字体 ID 变更后需更新 Worker 内映射表并重新 deploy  
-
-## 相关
-
-- Worker 源码：本目录 `src/`  
-- Rust 完整版：https://github.com/hehecat/fq-api  
-- 阅读 Sigma：https://github.com/angel888k/legado-Sigma-2026  
+| 现象 | 处理 |
+|---|---|
+| 搜索 参数有误 / 502 | `size>10`；用最新书源 `size=10` |
+| 目录/正文失败 | 重导 Full 源；确认 `/health` 为 `fq-full-adapter` |
+| 正文很短 | 你在用 Worker 网页源 → 换 Full 源 |
+| health 打不开 | 网络/DNS；检查 VPS tunnel 与 adapter 服务 |
