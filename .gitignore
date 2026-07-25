@@ -1,0 +1,9 @@
+/target
+/data/chapters/decoded_json/*
+!/data/chapters/decoded_json/.gitkeep
+/data/chapters/plaintext/*
+!/data/chapters/plaintext/.gitkeep
+/data/crypt_keys.json
+/data/font_cache/
+*.log
+.DS_Store
