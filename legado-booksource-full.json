@@ -4,7 +4,7 @@
     "bookSourceName": "番茄FQ·Full签名",
     "bookSourceGroup": "API",
     "bookSourceType": 0,
-    "bookSourceComment": "VPS full 接口（unidbg-fq 签名 + App full 解密）\n域名: https://fq-full.oyufen.com\n\n可拿网页试读锁住的完整章节。\n接口:\n  /search?key=&page=&size=\n  /book/{bookId}\n  /toc/{bookId}\n  /chapter/{bookId}/{chapterId}\n\npage 从 1 开始；size 建议 ≤10。\n调试关键字：我不是戏神",
+    "bookSourceComment": "VPS App full（unidbg 签名）完整正文\nhttps://fq-full.oyufen.com\n\n目录/正文已带完整 URL，无需 JS。\n搜索 page 从 1 开始，size≤10。\n调试：我不是戏神\n\n若失败：手机浏览器打开 /health 检查网络。",
     "customOrder": 0,
     "enabled": true,
     "enabledExplore": false,
@@ -13,38 +13,37 @@
     "header": "User-Agent: Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36\nAccept: application/json",
     "bookUrlPattern": "https?://fq-full\\.oyufen\\.com/book/\\d+",
     "respondTime": 120000,
-    "lastUpdateTime": 1753452000000,
+    "lastUpdateTime": 1753453000000,
     "searchUrl": "/search?key={{key}}&page={{page}}&size=10",
     "ruleSearch": {
       "bookList": "$.data.books",
-      "name": "$.bookName",
+      "name": "$.book_name",
       "author": "$.author",
       "kind": "$.category",
-      "wordCount": "$.wordNumber||$.wordCount",
-      "lastChapter": "$.lastChapterTitle",
-      "intro": "$.description",
-      "coverUrl": "$.coverUrl",
-      "bookUrl": "https://fq-full.oyufen.com/book/{{$.bookId}}",
+      "wordCount": "$.word_count",
+      "lastChapter": "$.last_chapter_title",
+      "intro": "$.abstract_text",
+      "coverUrl": "$.thumb_url",
+      "bookUrl": "$.book_url",
       "checkKeyWord": "我不是戏神"
     },
     "ruleBookInfo": {
-      "name": "$.data.bookName",
+      "name": "$.data.book_name",
       "author": "$.data.author",
       "kind": "$.data.category",
-      "wordCount": "$.data.wordNumber",
-      "lastChapter": "$.data.lastChapterTitle",
-      "intro": "$.data.description",
-      "coverUrl": "$.data.coverUrl",
-      "tocUrl": "https://fq-full.oyufen.com/toc/{{$.data.bookId}}"
+      "wordCount": "$.data.word_number",
+      "lastChapter": "$.data.last_chapter_title",
+      "intro": "$.data.abstract_text",
+      "coverUrl": "$.data.thumb_url",
+      "tocUrl": "$.data.toc_url"
     },
     "ruleToc": {
-      "chapterList": "$.data.item_data_list",
+      "chapterList": "$.data.chapters",
       "chapterName": "$.title",
-      "chapterUrl": "$.item_id##.+##@@js:\nvar m = baseUrl.match(/\\/toc\\/(\\d+)/) || baseUrl.match(/\\/book\\/(\\d+)/);\nvar bid = m ? m[1] : \"\";\n\"https://fq-full.oyufen.com/chapter/\" + bid + \"/\" + result;###"
+      "chapterUrl": "$.url"
     },
     "ruleContent": {
-      "content": "$.data.txtContent",
-      "replaceRegex": ""
+      "content": "$.data.content"
     },
     "weight": 200
   }
