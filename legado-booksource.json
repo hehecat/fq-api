@@ -14,7 +14,7 @@
     "bookUrlPattern": "https?://fq-api\\.hehecat\\.workers\\.dev/api/book/\\d+",
     "respondTime": 60000,
     "lastUpdateTime": 1753450000000,
-    "searchUrl": "/api/search?q={{key}}&page={{page}}&size=20",
+    "searchUrl": "/api/search?q={{key}}&page={{page}}&size=10",
     "ruleSearch": {
       "bookList": "$.data.books",
       "name": "$.book_name",
