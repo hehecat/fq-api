@@ -1,49 +1,50 @@
 [
   {
-    "bookSourceComment": "番茄小说 Cloudflare Worker API\n后端 https://fq-api.hehecat.workers.dev\nGitHub https://github.com/hehecat/fq-api\n\n搜索/详情/目录/正文 JSON；字体混淆已在服务端解码。\nWorker 默认按阅读页码（从1开始）处理 page。\n无发现；请控制并发。",
-    "bookSourceGroup": "API",
-    "bookSourceName": "番茄FQ·Worker",
-    "bookSourceType": 0,
     "bookSourceUrl": "https://fq-api.hehecat.workers.dev",
-    "bookUrlPattern": "https://fq-api\\.hehecat\\.workers\\.dev/api/book/\\d+$",
+    "bookSourceName": "番茄FQ·Worker",
+    "bookSourceGroup": "API",
+    "bookSourceType": 0,
+    "bookSourceComment": "番茄 Worker API 书源\nhttps://fq-api.hehecat.workers.dev\n\n若搜索无结果：\n1. 手机浏览器打开上面域名/health 看是否能访问（workers.dev 在部分网络不可达）\n2. 书源调试看失败 URL 与错误\n3. 可把域名换成你自己的 Worker/反代域名\n\n调试关键字：我不是戏神",
     "customOrder": 0,
     "enabled": true,
-    "enabledCookieJar": false,
     "enabledExplore": false,
-    "header": "{\n  \"User-Agent\": \"Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 Chrome/120.0.0.0 Mobile Safari/537.36\",\n  \"Accept\": \"application/json\"\n}",
-    "lastUpdateTime": 1753449600000,
-    "respondTime": 180000,
+    "enabledCookieJar": false,
+    "concurrentRate": "0",
+    "header": "User-Agent: Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36\nAccept: application/json",
+    "bookUrlPattern": "https?://fq-api\\.hehecat\\.workers\\.dev/api/book/\\d+",
+    "respondTime": 60000,
+    "lastUpdateTime": 1753450000000,
+    "searchUrl": "/api/search?q={{key}}&page={{page}}&size=20",
+    "ruleSearch": {
+      "bookList": "$.data.books",
+      "name": "$.book_name",
+      "author": "$.author",
+      "kind": "$.category",
+      "wordCount": "$.word_count",
+      "lastChapter": "$.last_chapter_title",
+      "intro": "$.abstract_text",
+      "coverUrl": "$.thumb_url",
+      "bookUrl": "$.book_url",
+      "checkKeyWord": "我不是戏神"
+    },
     "ruleBookInfo": {
-      "author": "$.data.author",
-      "coverUrl": "$.data.thumb_url",
-      "intro": "$.data.abstract_text",
-      "kind": "$.data.complete_category||$.data.category",
-      "lastChapter": "$.data.last_chapter_title",
       "name": "$.data.book_name",
-      "tocUrl": "$.data.book_id##(.*)##https://fq-api.hehecat.workers.dev/api/book/$1/directory###",
-      "wordCount": "$.data.word_number"
+      "author": "$.data.author",
+      "kind": "$.data.complete_category||$.data.category",
+      "wordCount": "$.data.word_number",
+      "lastChapter": "$.data.last_chapter_title",
+      "intro": "$.data.abstract_text",
+      "coverUrl": "$.data.thumb_url",
+      "tocUrl": "https://fq-api.hehecat.workers.dev/api/book/{{$.data.book_id}}/directory"
+    },
+    "ruleToc": {
+      "chapterList": "$.data.chapters",
+      "chapterName": "$.title",
+      "chapterUrl": "$.url"
     },
     "ruleContent": {
       "content": "$.data.content"
     },
-    "ruleSearch": {
-      "author": "$.author",
-      "bookList": "$.data.books[*]",
-      "bookUrl": "$.book_id##(.*)##https://fq-api.hehecat.workers.dev/api/book/$1###",
-      "checkKeyWord": "我不是戏神",
-      "coverUrl": "$.thumb_url",
-      "intro": "$.abstract_text",
-      "kind": "$.category",
-      "lastChapter": "$.last_chapter_title",
-      "name": "$.book_name",
-      "wordCount": "$.word_count"
-    },
-    "ruleToc": {
-      "chapterList": "$.data.chapters[*]",
-      "chapterName": "$.title",
-      "chapterUrl": "$.item_id##.+##@@js:\nvar m = baseUrl.match(/\\/book\\/(\\d+)\\//);\nvar bid = m ? m[1] : \"\";\n\"https://fq-api.hehecat.workers.dev/api/book/\" + bid + \"/chapter/\" + result;###"
-    },
-    "searchUrl": "https://fq-api.hehecat.workers.dev/api/search?q={{key}}&page={{page}}&size=20",
-    "weight": 0
+    "weight": 100
   }
 ]
