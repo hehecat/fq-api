@@ -38,6 +38,21 @@ curl 'https://fq-full.oyufen.com/chapter/7276384138653862966/7283421685154480674
 - `/api/book/{id}/directory`
 - `/api/book/{id}/chapter/{item_id}`
 
+## 网页下载（搜索 + TXT/EPUB）
+
+打开：
+
+**https://fq-full.oyufen.com/**
+
+1. 搜索书名  
+2. 勾选 TXT / EPUB  
+3. 点「下载全文」  
+4. 进度条走完后点下载链接  
+
+拉取策略：按 **30 章窗口** 批量请求（对齐 unidbg 内部 `batch_full` 预取大小），窗口内并发，比纯串行快。
+
+导出文件保存在 VPS `/opt/fq/exports/`，也可通过页面链接下载。
+
 ### Worker API（网页链路）
 
 ```bash
